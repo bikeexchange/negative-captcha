@@ -141,4 +141,29 @@ class NegativeCaptchaTest < Test::Unit::TestCase
     assert_equal "", filled_form.error
     assert filled_form.valid?
   end
+
+  def test_invalid_encoding_in_input
+    fields = [:name, :comment]
+    captcha = NegativeCaptcha.new(:fields => fields)
+    assert captcha.fields.is_a?(Hash)
+    assert_equal captcha.fields.keys.sort{|a,b|a.to_s<=>b.to_s}, fields.sort{|a,b|a.to_s<=>b.to_s}
+
+    # This is creating a string which is _kind of_ invalid utf-8 i.e. it
+    # encodes a valid code point (0) but uses too many bytes to do so.
+    # Ruby raises "ArgumentError: invalid byte sequence in UTF-8" when it
+    # tries to process it. More permissive UTF-8 readers may just call it a 0
+
+    bad_string = [49, 0, 192, 128].pack("c*")
+    bad_string.force_encoding("UTF-8")
+
+    submission = {:comment => bad_string}
+
+    filled_form = NegativeCaptcha.new(
+      :fields => fields,
+      :timestamp => captcha.timestamp,
+      :params => {:timestamp => captcha.timestamp, :spinner => captcha.spinner}.merge(submission)
+    )
+    assert !filled_form.valid?
+    assert filled_form.error.match(/invalid encoding/i).is_a?(MatchData)
+  end
 end

@@ -79,6 +79,15 @@ Error: Hidden form fields were submitted that should not have been. #{message}
         self.values[name] = params[encrypted_name] if params.include? encrypted_name
       end
     end
+  rescue ArgumentError => ex
+    if (ex.message =~ /invalid byte sequence in UTF-8/)
+      self.error = <<-ERROR
+Error: Form fields were submitted with an invalid encoding. #{message}
+      ERROR
+    else
+      raise ex
+    end
+    false
   end
 end
 
