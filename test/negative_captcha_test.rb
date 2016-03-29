@@ -156,8 +156,7 @@ class NegativeCaptchaTest < Test::Unit::TestCase
     bad_string = [49, 0, 192, 128].pack("c*")
     bad_string.force_encoding("UTF-8")
 
-    submission = {}
-    submission[:comment] = bad_string
+    submission = {:comment => bad_string}
 
     filled_form = NegativeCaptcha.new(
       :fields => fields,
